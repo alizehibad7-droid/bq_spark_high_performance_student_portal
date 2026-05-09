@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1055142062544",
+    "project_id": "bq-high-performance",
+    "storage_bucket": "bq-high-performance.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1055142062544:android:43f83931d837c1299871d5",
+        "android_client_info": {
+          "package_name": "com.example.bq_spark_high_performance_student_portal"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCr53mluoumKHf853c6VgA7YIL4Fxdjq18"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
