@@ -4,7 +4,8 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:flutter/foundation.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart' show debugPrint, kIsWeb;
 
 import '../firebase_options.dart';
 
@@ -42,10 +43,12 @@ class AuthService {
 
     for (final email in candidateEmails.toSet()) {
       try {
-        return await _auth.signInWithEmailAndPassword(
+        final userCredential = await _auth.signInWithEmailAndPassword(
           email: email,
           password: password,
         );
+        await _saveFcmTokenSafely(userCredential.user!.uid);
+        return userCredential;
       } on FirebaseAuthException catch (e) {
         lastAuthException = e;
         if (e.code != 'user-not-found') {
@@ -124,6 +127,8 @@ class AuthService {
     });
     debugPrint('Student role saved as student for uid: ${cred.user!.uid}');
 
+    await _saveFcmTokenSafely(cred.user!.uid);
+
     return cred;
   }
 
@@ -192,7 +197,24 @@ class AuthService {
       );
     }
 
+    await _saveFcmTokenSafely(cred.user!.uid);
+
     return cred;
+  }
+
+  Future<void> _saveFcmTokenSafely(String uid) async {
+    try {
+      if (!kIsWeb) {
+        final token = await FirebaseMessaging.instance
+            .getToken()
+            .timeout(const Duration(seconds: 5));
+        if (token != null) {
+          await _db.collection('users').doc(uid).update({'fcmToken': token});
+        }
+      }
+    } catch (e) {
+      debugPrint('FCM token save skipped: $e');
+    }
   }
 
   Future<void> _createBootstrapAdminIfMissing({

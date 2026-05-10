@@ -6,7 +6,9 @@ import '../providers/auth_provider.dart';
 import '../providers/student_provider.dart';
 import '../providers/task_provider.dart';
 import '../services/firestore_service.dart';
+import '../services/remote_config_service.dart';
 import 'admin_panel_screen.dart';
+import 'ai_chat_screen.dart';
 import '../theme/app_theme.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -23,8 +25,24 @@ class HomeScreen extends StatelessWidget {
     final completedCount = taskProvider.completedTaskIds.length;
     final pendingCount = (taskProvider.tasks.length - completedCount).clamp(0, 999);
 
+    final banner = RemoteConfigService().announcementBanner;
+
     return Scaffold(
       backgroundColor: AppColors.background,
+      floatingActionButton: FloatingActionButton.extended(
+        backgroundColor: const Color(0xFFB8A030),
+        icon: const Icon(Icons.auto_awesome_rounded, color: Colors.white),
+        label: const Text(
+          'Ask AI',
+          style: TextStyle(color: Colors.white),
+        ),
+        onPressed: () => Navigator.push(
+          context,
+          MaterialPageRoute<void>(
+            builder: (_) => const AIChatScreen(),
+          ),
+        ),
+      ),
       appBar: AppBar(
         title: const Text("BQ Spark"),
         automaticallyImplyLeading: false,
@@ -41,44 +59,75 @@ class HomeScreen extends StatelessWidget {
             ),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _welcomeCard(student),
-            const SizedBox(height: 16),
-            _stageCard(student),
-            const SizedBox(height: 16),
-            _quickStatsCard(
-              completedCount: completedCount,
-              pendingCount: pendingCount,
-              rankWidget: StreamBuilder<List<UserModel>>(
-                stream: firestoreService.streamLeaderboardUsers(),
-                builder: (context, snapshot) {
-                  if (!snapshot.hasData || authProvider.currentUser == null) {
-                    return const Text('-', style: TextStyle(fontWeight: FontWeight.bold));
-                  }
-                  final uid = authProvider.currentUser!.uid;
-                  final index =
-                      snapshot.data!.indexWhere((user) => user.id == uid);
-                  return Text(
-                    index == -1 ? '-' : '#${index + 1}',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.primary,
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (banner.isNotEmpty)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              color: const Color(0xFFFFF8E1),
+              child: Row(
+                children: [
+                  const Icon(Icons.campaign_rounded,
+                      color: Color(0xFFB8A030), size: 18),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      banner,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Color(0xFF7A6000),
+                      ),
                     ),
-                  );
-                },
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 12),
-            const Text(
-              "Keep going — consistency wins.",
-              style: TextStyle(color: AppColors.textGray),
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _welcomeCard(student),
+                  const SizedBox(height: 16),
+                  _stageCard(student),
+                  const SizedBox(height: 16),
+                  _quickStatsCard(
+                    completedCount: completedCount,
+                    pendingCount: pendingCount,
+                    rankWidget: StreamBuilder<List<UserModel>>(
+                      stream: firestoreService.streamLeaderboardUsers(),
+                      builder: (context, snapshot) {
+                        if (!snapshot.hasData ||
+                            authProvider.currentUser == null) {
+                          return const Text('-',
+                              style: TextStyle(fontWeight: FontWeight.bold));
+                        }
+                        final uid = authProvider.currentUser!.uid;
+                        final index = snapshot.data!
+                            .indexWhere((user) => user.id == uid);
+                        return Text(
+                          index == -1 ? '-' : '#${index + 1}',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.primary,
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  const Text(
+                    "Keep going — consistency wins.",
+                    style: TextStyle(color: AppColors.textGray),
+                  ),
+                ],
+              ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

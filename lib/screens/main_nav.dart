@@ -5,6 +5,7 @@ import '../providers/auth_provider.dart';
 import '../providers/student_provider.dart';
 import '../providers/task_provider.dart';
 import '../theme/app_theme.dart';
+import 'ai_chat_screen.dart';
 import 'home_screen.dart';
 import 'tasks_screen.dart';
 import 'leaderboard_screen.dart';
@@ -26,6 +27,7 @@ class _MainNavState extends State<MainNav> {
     TasksScreen(),
     LeaderboardScreen(),
     ResourcesScreen(),
+    AIChatScreen(),
     ProfileScreen(),
   ];
 
@@ -46,7 +48,10 @@ class _MainNavState extends State<MainNav> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: _screens[_currentIndex],
+      body: IndexedStack(
+        index: _currentIndex,
+        children: _screens,
+      ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
         onTap: (i) => setState(() => _currentIndex = i),
@@ -62,6 +67,8 @@ class _MainNavState extends State<MainNav> {
               icon: Icon(Icons.leaderboard_outlined), label: 'Ranks'),
           BottomNavigationBarItem(
               icon: Icon(Icons.library_books_outlined), label: 'Resources'),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.auto_awesome_rounded), label: 'AI Chat'),
           BottomNavigationBarItem(
               icon: Icon(Icons.person_outline), label: 'Profile'),
         ],

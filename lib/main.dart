@@ -1,9 +1,12 @@
 import 'dart:async';
+import 'dart:ui';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart' as fb_auth;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:provider/provider.dart';
 
@@ -23,6 +26,7 @@ import 'services/firestore_service.dart';
 import 'services/notification_service.dart';
 import 'services/resource_service.dart';
 import 'services/task_service.dart';
+import 'services/remote_config_service.dart';
 import 'theme/app_theme.dart';
 
 void main() async {
@@ -53,6 +57,24 @@ void main() async {
       options: DefaultFirebaseOptions.currentPlatform,
     );
     debugPrint('Firebase initialized successfully.');
+
+    await RemoteConfigService().init();
+
+    if (!kIsWeb) {
+      FlutterError.onError =
+          FirebaseCrashlytics.instance.recordFlutterFatalError;
+
+      PlatformDispatcher.instance.onError = (error, stack) {
+        FirebaseCrashlytics.instance
+            .recordError(error, stack, fatal: true);
+        return true;
+      };
+    } else {
+      FlutterError.onError = (FlutterErrorDetails details) {
+        FlutterError.presentError(details);
+        debugPrint('Flutter error: ${details.exceptionAsString()}');
+      };
+    }
 
     FirebaseMessaging.onBackgroundMessage(
       NotificationService.firebaseBackgroundHandler,
@@ -88,9 +110,8 @@ class _BQSparkAppState extends State<BQSparkApp> {
     _taskService = TaskService();
     _resourceService = ResourceService();
     unawaited(
-      _notificationService.init().catchError((error, stackTrace) {
-        debugPrint('NotificationService init failed: $error');
-        debugPrintStack(stackTrace: stackTrace);
+      _notificationService.init().catchError((Object e) {
+        debugPrint('Notification init failed: $e');
       }),
     );
   }

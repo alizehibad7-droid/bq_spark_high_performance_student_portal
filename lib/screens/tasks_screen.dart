@@ -21,14 +21,17 @@ class _TasksScreenState extends State<TasksScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final authProvider = context.read<AuthProvider>();
-    final taskProvider = context.read<TaskProvider>();
-    final userId = authProvider.currentUser?.uid;
-    if (userId != null &&
-        taskProvider.tasks.isEmpty &&
-        !taskProvider.isLoading) {
-      taskProvider.watchTasksForUser(userId);
-    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final authProvider = context.read<AuthProvider>();
+      final taskProvider = context.read<TaskProvider>();
+      final userId = authProvider.currentUser?.uid;
+      if (userId != null &&
+          taskProvider.tasks.isEmpty &&
+          !taskProvider.isLoading) {
+        taskProvider.watchTasksForUser(userId);
+      }
+    });
   }
 
   @override

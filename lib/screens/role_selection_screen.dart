@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../services/remote_config_service.dart';
+
 class RoleSelectionScreen extends StatelessWidget {
   const RoleSelectionScreen({super.key});
 
@@ -13,6 +15,29 @@ class RoleSelectionScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (RemoteConfigService().maintenanceMode) {
+      return const Scaffold(
+        backgroundColor: Color(0xFF1A5C35),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.construction_rounded, color: Colors.white, size: 64),
+              SizedBox(height: 16),
+              Text(
+                'App under maintenance',
+                style: TextStyle(color: Colors.white, fontSize: 18),
+              ),
+              Text(
+                'Please check back later',
+                style: TextStyle(color: Colors.white70, fontSize: 13),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: _background,
       body: SafeArea(

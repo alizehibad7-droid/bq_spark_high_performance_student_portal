@@ -1,9 +1,8 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 
-import '../models/task_model.dart';
-import '../services/task_service.dart';
+import '../models/task_model.dart';import '../services/task_service.dart';
 
 class TaskProvider extends ChangeNotifier {
   TaskProvider(this._taskService);
@@ -27,7 +26,9 @@ class TaskProvider extends ChangeNotifier {
   Future<void> watchTasksForUser(String userId) async {
     _isLoading = true;
     _error = null;
-    notifyListeners();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (hasListeners) notifyListeners();
+    });
 
     try {
       await _taskSub?.cancel();
@@ -36,19 +37,25 @@ class TaskProvider extends ChangeNotifier {
       _taskSub = _taskService.streamTasks().listen((items) {
         _tasks = items;
         _isLoading = false;
-        notifyListeners();
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (hasListeners) notifyListeners();
+        });
       });
 
       _completionSub = _taskService
           .streamCompletedTaskIdsForUser(userId)
           .listen((ids) {
             _completedTaskIds = ids;
-            notifyListeners();
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (hasListeners) notifyListeners();
+            });
           });
     } catch (_) {
       _error = 'Unable to load tasks right now.';
       _isLoading = false;
-      notifyListeners();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (hasListeners) notifyListeners();
+      });
     }
   }
 

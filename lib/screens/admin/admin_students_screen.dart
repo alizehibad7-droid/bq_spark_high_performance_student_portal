@@ -22,29 +22,56 @@ class AdminStudentsScreen extends StatelessWidget {
   }
 
   Future<void> _deleteStudent(BuildContext context, UserModel student) async {
+    // Show confirmation dialog first
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Delete Student'),
+        content: Text(
+          'Delete "${student.name}" (${student.studentId})?\n\nThis cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Delete', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
     try {
-      await FirebaseFirestore.instance
-          .collection('users')
-          .doc(student.id)
-          .delete();
+      // Delete from Firestore only
+      await FirebaseFirestore.instance.collection('users').doc(student.id).delete();
+
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Student deleted successfully')),
+          const SnackBar(
+            content: Text('Student deleted successfully'),
+            backgroundColor: Colors.green,
+          ),
         );
       }
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Delete failed: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to delete: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
       }
     }
   }
 
-  Future<void> _showDeleteDialog(
-    BuildContext context,
-    UserModel student,
-  ) async {
+  Future<void> _showDeleteDialog(BuildContext context, UserModel student) async {
     await showDialog<void>(
       context: context,
       builder: (_) => AlertDialog(
@@ -150,12 +177,7 @@ class AdminStudentsScreen extends StatelessWidget {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(
-                                    s.name,
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
+                                  Text(s.name, style: const TextStyle(fontWeight: FontWeight.w600)),
                                   const SizedBox(height: 2),
                                   Text(s.studentId),
                                 ],
@@ -202,10 +224,10 @@ class AdminStudentsScreen extends StatelessWidget {
                             IconButton(
                               icon: const Icon(
                                 Icons.delete_outline_rounded,
-                                size: 18,
+                                size: 20,
                                 color: Colors.red,
                               ),
-                              onPressed: () => _showDeleteDialog(context, s),
+                              onPressed: () => _deleteStudent(context, s),
                             ),
                           ],
                         ),
@@ -258,9 +280,7 @@ class _EditStudentSheetState extends State<EditStudentSheet> {
   void initState() {
     super.initState();
     _nameController = TextEditingController(text: widget.student.name);
-    _studentIdController = TextEditingController(
-      text: widget.student.studentId,
-    );
+    _studentIdController = TextEditingController(text: widget.student.studentId);
     _githubController = TextEditingController(text: widget.student.githubLink);
     _selectedStage = widget.student.currentStage.clamp(1, 4);
   }
@@ -274,14 +294,11 @@ class _EditStudentSheetState extends State<EditStudentSheet> {
   }
 
   Future<void> _saveEdits() async {
-    await FirebaseFirestore.instance
-        .collection('users')
-        .doc(widget.student.id)
-        .update({
-          'name': _nameController.text.trim(),
-          'currentStage': _selectedStage,
-          'githubLink': _githubController.text.trim(),
-        });
+    await FirebaseFirestore.instance.collection('users').doc(widget.student.id).update({
+      'name': _nameController.text.trim(),
+      'currentStage': _selectedStage,
+      'githubLink': _githubController.text.trim(),
+    });
     if (!mounted) return;
     Navigator.pop(context);
     ScaffoldMessenger.of(context).showSnackBar(
@@ -352,14 +369,9 @@ class _EditStudentSheetState extends State<EditStudentSheet> {
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF1A5C35),
-              ),
+              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF1A5C35)),
               onPressed: _saveEdits,
-              child: const Text(
-                'Save Changes',
-                style: TextStyle(color: Colors.white),
-              ),
+              child: const Text('Save Changes', style: TextStyle(color: Colors.white)),
             ),
           ),
           const SizedBox(height: 20),

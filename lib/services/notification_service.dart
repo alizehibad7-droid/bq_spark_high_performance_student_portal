@@ -1,55 +1,106 @@
-import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/foundation.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'dart:async';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/material.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 class NotificationService {
   NotificationService();
 
   final FirebaseFirestore _db = FirebaseFirestore.instance;
-  final FirebaseMessaging _messaging = FirebaseMessaging.instance;
-  final FlutterLocalNotificationsPlugin _localNotifications =
-  FlutterLocalNotificationsPlugin();
+
+  static final FlutterLocalNotificationsPlugin _localNotif =
+      FlutterLocalNotificationsPlugin();
+
+  @pragma('vm:entry-point')
+  static Future<void> firebaseBackgroundHandler(RemoteMessage message) async {
+    debugPrint('BG notification: ${message.notification?.title}');
+  }
 
   Future<void> init() async {
-    await _messaging.requestPermission(
+    try {
+      await _initInternal()
+          .timeout(const Duration(seconds: 5));
+    } catch (e) {
+      debugPrint('NotificationService skipped: $e');
+    }
+  }
+
+  Future<void> _initInternal() async {
+    if (kIsWeb) {
+      debugPrint('FCM skipped on web platform');
+      return;
+    }
+
+    final messaging = FirebaseMessaging.instance;
+    await messaging.requestPermission(
       alert: true,
-      announcement: false,
       badge: true,
-      carPlay: false,
-      criticalAlert: false,
-      provisional: false,
       sound: true,
     );
 
-    const androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
-    const initSettings = InitializationSettings(android: androidInit);
-    await _localNotifications.initialize(initSettings);
+    final token = await messaging
+        .getToken()
+        .timeout(const Duration(seconds: 5));
+    debugPrint('FCM Token: $token');
+
+    const androidInit =
+        AndroidInitializationSettings('@mipmap/ic_launcher');
+    await _localNotif.initialize(
+      const InitializationSettings(android: androidInit),
+    );
+
+    const channel = AndroidNotificationChannel(
+      'bq_spark_channel',
+      'BQ Spark Notifications',
+      description: 'HP Track student notifications',
+      importance: Importance.high,
+    );
+    await _localNotif
+        .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>()
+        ?.createNotificationChannel(channel);
 
     FirebaseMessaging.onMessage.listen((RemoteMessage message) async {
+      final notification = message.notification;
+      if (notification != null) {
+        await _localNotif.show(
+          notification.hashCode,
+          notification.title,
+          notification.body,
+          const NotificationDetails(
+            android: AndroidNotificationDetails(
+              'bq_spark_channel',
+              'BQ Spark Notifications',
+              channelDescription: 'HP Track student notifications',
+              importance: Importance.high,
+              priority: Priority.high,
+              icon: '@mipmap/ic_launcher',
+            ),
+          ),
+        );
+      }
       final title = message.notification?.title ?? 'BQ Spark';
       final body = message.notification?.body ?? '';
-      await _showLocalNotification(title: title, body: body);
       await addNotification(title: title, body: body, sentBy: 'system');
     });
   }
-
   Future<String?> getDeviceToken() async {
+    if (kIsWeb) return null;
     try {
-      return await _messaging.getToken();
+      return await FirebaseMessaging.instance
+          .getToken()
+          .timeout(const Duration(seconds: 5));
     } catch (_) {
       return null;
     }
   }
-
   Future<void> sendAnnouncement({
     required String title,
     required String body,
     required String sentBy,
   }) async {
-    // Client apps cannot reliably broadcast FCM to all users.
-    // This stores the notification in Firestore. Use Cloud Functions/Admin SDK
-    // to send actual push to all tokens.
     await addNotification(title: title, body: body, sentBy: sentBy);
   }
 
@@ -81,29 +132,5 @@ class NotificationService {
       'sentBy': sentBy,
       'sentAt': FieldValue.serverTimestamp(),
     });
-  }
-
-  Future<void> _showLocalNotification({
-    required String title,
-    required String body,
-  }) async {
-    const androidDetails = AndroidNotificationDetails(
-      'bq_spark_channel',
-      'BQ Spark Notifications',
-      channelDescription: 'Task and admin announcements',
-      importance: Importance.max,
-      priority: Priority.high,
-    );
-    const details = NotificationDetails(android: androidDetails);
-    await _localNotifications.show(
-      DateTime.now().millisecondsSinceEpoch ~/ 1000,
-      title,
-      body,
-      details,
-    );
-  }
-
-  static Future<void> firebaseBackgroundHandler(RemoteMessage message) async {
-    debugPrint('Handling background message: ${message.messageId}');
   }
 }
