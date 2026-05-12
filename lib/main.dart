@@ -15,6 +15,7 @@ import 'providers/auth_provider.dart';
 import 'providers/student_provider.dart';
 import 'providers/task_provider.dart';
 import 'screens/role_selection_screen.dart';
+import 'screens/splash_screen.dart';
 import 'screens/student/student_login_screen.dart';
 import 'screens/student/student_signup_screen.dart';
 import 'screens/student/student_forgot_password_screen.dart';
@@ -140,9 +141,9 @@ class _BQSparkAppState extends State<BQSparkApp> {
         title: 'BQ Spark',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.theme,
-        home: const RoleSelectionScreen(),
+        home: const SplashScreen(),
         routes: {
-          '/role-selection': (_) => const RoleSelectionScreen(),
+          '/role-selection': (_) => RoleSelectionScreen(),
           '/student-login': (_) => const StudentLoginScreen(),
           '/student-signup': (_) => const StudentSignupScreen(),
           '/student-forgot-password': (_) => const StudentForgotPasswordScreen(),
@@ -153,7 +154,7 @@ class _BQSparkAppState extends State<BQSparkApp> {
         onUnknownRoute: (_) {
           debugPrint('Unknown route triggered. Redirecting to role selection.');
           return MaterialPageRoute(
-            builder: (_) => const RoleSelectionScreen(),
+            builder: (_) => RoleSelectionScreen(),
           );
         },
       ),

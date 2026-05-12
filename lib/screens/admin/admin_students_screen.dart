@@ -21,35 +21,52 @@ class AdminStudentsScreen extends StatelessWidget {
         : trimmed.substring(0, 2).toUpperCase();
   }
 
-  Future<void> _deleteStudent(BuildContext context, UserModel student) async {
-    // Show confirmation dialog first
+  Future<void> _deleteStudent(
+      BuildContext context, UserModel student) async {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
         title: const Text('Delete Student'),
         content: Text(
-          'Delete "${student.name}" (${student.studentId})?\n\nThis cannot be undone.',
+          'Delete "${student.name}"?\n'
+          'Student ID: ${student.studentId}\n\n'
+          'This action cannot be undone.',
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+            child: const Text(
+              'Cancel',
+              style: TextStyle(color: Colors.grey),
+            ),
           ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Delete', style: TextStyle(color: Colors.white)),
+            child: const Text(
+              'Delete',
+              style: TextStyle(color: Colors.white),
+            ),
           ),
         ],
       ),
     );
 
-    if (confirm != true) return;
+    if (confirm != true || !context.mounted) return;
 
     try {
-      // Delete from Firestore only
-      await FirebaseFirestore.instance.collection('users').doc(student.id).delete();
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(student.id)
+          .delete();
 
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -69,33 +86,6 @@ class AdminStudentsScreen extends StatelessWidget {
         );
       }
     }
-  }
-
-  Future<void> _showDeleteDialog(BuildContext context, UserModel student) async {
-    await showDialog<void>(
-      context: context,
-      builder: (_) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Delete Student'),
-        content: Text(
-          'Are you sure you want to delete "${student.name}" (${student.studentId})?\n\nThis action cannot be undone.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            onPressed: () async {
-              Navigator.pop(context);
-              await _deleteStudent(context, student);
-            },
-            child: const Text('Delete', style: TextStyle(color: Colors.white)),
-          ),
-        ],
-      ),
-    );
   }
 
   Future<void> _showEditDialog(BuildContext context, UserModel student) async {
@@ -224,8 +214,8 @@ class AdminStudentsScreen extends StatelessWidget {
                             IconButton(
                               icon: const Icon(
                                 Icons.delete_outline_rounded,
-                                size: 20,
                                 color: Colors.red,
+                                size: 20,
                               ),
                               onPressed: () => _deleteStudent(context, s),
                             ),

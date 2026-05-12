@@ -53,7 +53,7 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
     await FirebaseAuth.instance.signOut();
     if (!mounted) return;
     Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (_) => const RoleSelectionScreen()),
+      MaterialPageRoute(builder: (_) => RoleSelectionScreen()),
       (route) => false,
     );
   }
@@ -72,6 +72,7 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final canPop = Navigator.of(context).canPop();
     return Scaffold(
       backgroundColor: _pageBg,
       appBar: AppBar(
@@ -79,6 +80,8 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
         foregroundColor: Colors.white,
         elevation: 0,
         title: Text(_titles[_selectedIndex]),
+        automaticallyImplyLeading: canPop,
+        leading: null,
         actions: [
           Container(
             margin: const EdgeInsets.only(right: 8),
@@ -96,10 +99,6 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
                 color: Colors.white,
               ),
             ),
-          ),
-          IconButton(
-            onPressed: _logout,
-            icon: const Icon(Icons.logout_rounded),
           ),
         ],
       ),
@@ -1168,6 +1167,14 @@ class _AdminStudentsTab extends StatelessWidget {
                                 ],
                               ),
                             ),
+                            IconButton(
+                              icon: const Icon(
+                                Icons.delete_outline_rounded,
+                                color: Colors.red,
+                                size: 20,
+                              ),
+                              onPressed: () => _deleteStudent(context, student),
+                            ),
                           ],
                         ),
                       ),
@@ -1180,6 +1187,73 @@ class _AdminStudentsTab extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  Future<void> _deleteStudent(
+      BuildContext context, UserModel student) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        title: const Text('Delete Student'),
+        content: Text(
+          'Delete "${student.name}"?\n'
+          'Student ID: ${student.studentId}\n\n'
+          'This action cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text(
+              'Cancel',
+              style: TextStyle(color: Colors.grey),
+            ),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text(
+              'Delete',
+              style: TextStyle(color: Colors.white),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true || !context.mounted) return;
+
+    try {
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(student.id)
+          .delete();
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Student deleted successfully'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to delete: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   String _initials(String name) {
