@@ -21,7 +21,6 @@ A modern, full-featured Flutter application designed to manage and track the per
 - **Completion Stats**: Monitor task completion rates across the program.
 
 ## 🛠️ Tech Stack
-
 - **Framework**: [Flutter](https://flutter.dev/) (Targeting Android, iOS, and Web)
 - **Backend**: [Firebase](https://firebase.google.com/)
   - **Authentication**: Email/ID based login system.
