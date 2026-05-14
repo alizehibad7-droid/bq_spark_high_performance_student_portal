@@ -108,9 +108,13 @@ class _AdminResourcesScreenState extends State<AdminResourcesScreen> {
       child: Scaffold(
         backgroundColor: _bg,
         appBar: AppBar(
-          title: const Text('Resources'),
           backgroundColor: _primaryGreen,
           foregroundColor: Colors.white,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_ios_rounded),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+          title: const Text('Resources'),
           bottom: const TabBar(
             indicatorColor: Colors.white,
             labelColor: Colors.white,
@@ -356,7 +360,7 @@ class _AddResourceFormState extends State<_AddResourceForm> {
               children: const [
                 Icon(Icons.info_outline, size: 14, color: Colors.grey),
                 SizedBox(width: 6),
-                Text(
+                const Text(
                   'Or upload a PDF file directly:',
                   style: TextStyle(fontSize: 12, color: Colors.grey),
                 ),

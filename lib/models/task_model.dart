@@ -6,6 +6,7 @@ class TaskModel {
   final String description;
   final DateTime? dueDate;
   final int points;
+  final String submissionLink;
 
   TaskModel({
     required this.id,
@@ -13,6 +14,7 @@ class TaskModel {
     required this.description,
     required this.dueDate,
     required this.points,
+    this.submissionLink = '',
   });
 
   factory TaskModel.fromMap(String id, Map<String, dynamic> data) {
@@ -37,6 +39,17 @@ class TaskModel {
       description: data['description'] ?? '',
       dueDate: parsedDueDate,
       points: parsedPoints,
+      submissionLink: data['submissionLink'] as String? ?? '',
     );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'title': title,
+      'description': description,
+      'dueDate': dueDate == null ? null : Timestamp.fromDate(dueDate!),
+      'points': points,
+      'submissionLink': submissionLink,
+    };
   }
 }

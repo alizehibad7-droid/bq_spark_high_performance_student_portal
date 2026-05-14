@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../firebase/firebase_error_mapper.dart';
 import '../../services/auth_service.dart';
 import '../../theme/app_theme.dart';
+import '../main_nav.dart';
 
 class StudentLoginScreen extends StatefulWidget {
   const StudentLoginScreen({super.key});
@@ -39,7 +39,12 @@ class _StudentLoginScreenState extends State<StudentLoginScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Login successful')),
       );
-      Navigator.pushReplacementNamed(context, '/student-dashboard');
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute<void>(
+          builder: (_) => const MainNav(),
+        ),
+        (route) => false,
+      );
     } catch (e, stack) {
       debugPrint('LOGIN ERROR TYPE: ${e.runtimeType}');
       debugPrint('LOGIN ERROR: $e');

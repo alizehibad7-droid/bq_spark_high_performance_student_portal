@@ -12,14 +12,17 @@ class AdminManageTasksScreen extends StatefulWidget {
   const AdminManageTasksScreen({super.key});
 
   @override
-  State<AdminManageTasksScreen> createState() => _AdminManageTasksScreenState();
+  State<AdminManageTasksScreen> createState() =>
+      _AdminManageTasksScreenState();
 }
 
-class _AdminManageTasksScreenState extends State<AdminManageTasksScreen> {
+class _AdminManageTasksScreenState
+    extends State<AdminManageTasksScreen> {
   final _formKey = GlobalKey<FormState>();
   final _titleCtrl = TextEditingController();
   final _descCtrl = TextEditingController();
   final _pointsCtrl = TextEditingController();
+  final _linkCtrl = TextEditingController();
   DateTime? _dueDate;
   bool _submitting = false;
 
@@ -32,6 +35,7 @@ class _AdminManageTasksScreenState extends State<AdminManageTasksScreen> {
     _titleCtrl.dispose();
     _descCtrl.dispose();
     _pointsCtrl.dispose();
+    _linkCtrl.dispose();
     super.dispose();
   }
 
@@ -49,35 +53,35 @@ class _AdminManageTasksScreenState extends State<AdminManageTasksScreen> {
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate() || _dueDate == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please complete all fields.')),
+        const SnackBar(
+            content: Text('Please complete all fields.')),
       );
       return;
     }
-
     setState(() => _submitting = true);
     try {
       final currentUid =
           context.read<AuthService>().currentUser?.uid ?? 'admin';
       await context.read<TaskService>().addTask(
-        title: _titleCtrl.text.trim(),
-        description: _descCtrl.text.trim(),
-        dueDate: _dueDate!,
-        points: int.parse(_pointsCtrl.text.trim()),
-        createdBy: currentUid,
-      );
+            title: _titleCtrl.text.trim(),
+            description: _descCtrl.text.trim(),
+            dueDate: _dueDate!,
+            points: int.parse(_pointsCtrl.text.trim()),
+            createdBy: currentUid,
+            submissionLink: _linkCtrl.text.trim(),
+          );
       _titleCtrl.clear();
       _descCtrl.clear();
       _pointsCtrl.clear();
+      _linkCtrl.clear();
       setState(() => _dueDate = null);
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Task added successfully')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Task added successfully')));
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Failed to add task: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to add task: $e')));
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
@@ -91,21 +95,17 @@ class _AdminManageTasksScreenState extends State<AdminManageTasksScreen> {
       confirmLabel: 'Delete',
       isDestructive: true,
     );
-
     if (!confirmed) return;
     if (!mounted) return;
-
     try {
       await context.read<TaskService>().deleteTask(taskId);
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Task deleted')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Task deleted')));
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Failed to delete task: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to delete task: $e')));
     }
   }
 
@@ -117,9 +117,13 @@ class _AdminManageTasksScreenState extends State<AdminManageTasksScreen> {
       child: Scaffold(
         backgroundColor: _bg,
         appBar: AppBar(
-          title: const Text('Manage Tasks'),
           backgroundColor: _primaryGreen,
           foregroundColor: Colors.white,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_ios_rounded),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+          title: const Text('Manage Tasks'),
           bottom: const TabBar(
             indicatorColor: Colors.white,
             labelColor: Colors.white,
@@ -132,15 +136,19 @@ class _AdminManageTasksScreenState extends State<AdminManageTasksScreen> {
         ),
         body: TabBarView(
           children: [
+            // ── TAB 1: ALL TASKS ──
             StreamBuilder<List<TaskModel>>(
               stream: service.streamTasks(),
               builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
+                if (snapshot.connectionState ==
+                    ConnectionState.waiting) {
+                  return const Center(
+                      child: CircularProgressIndicator());
                 }
                 final tasks = snapshot.data ?? <TaskModel>[];
                 if (tasks.isEmpty) {
-                  return const Center(child: Text('No tasks found.'));
+                  return const Center(
+                      child: Text('No tasks found.'));
                 }
                 return ListView.builder(
                   padding: const EdgeInsets.all(12),
@@ -149,43 +157,94 @@ class _AdminManageTasksScreenState extends State<AdminManageTasksScreen> {
                     final task = tasks[index];
                     return Card(
                       color: Colors.white,
-                      child: ListTile(
-                        title: Text(
-                          task.title,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.textDark,
-                          ),
-                        ),
-                        subtitle: Text(
-                          'Due: ${task.dueDate == null ? 'No due date' : DateFormat('dd MMM yyyy').format(task.dueDate!)}',
-                        ),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
+                      margin: const EdgeInsets.only(bottom: 8),
+                      child: Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: Row(
+                          crossAxisAlignment:
+                              CrossAxisAlignment.start,
                           children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 4,
-                              ),
-                              decoration: BoxDecoration(
-                                color: _goldAccent,
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Text(
-                                '+${task.points} pts',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 12,
-                                ),
+                            // Left: title + due + form badge
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment:
+                                    CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    task.title,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 14,
+                                      color: Color(0xFF1A1A2E),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'Due: ${task.dueDate == null ? 'No due date' : DateFormat('dd MMM yyyy').format(task.dueDate!)}',
+                                    style: const TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.grey),
+                                  ),
+                                  if (task.submissionLink
+                                      .isNotEmpty) ...[
+                                    const SizedBox(height: 4),
+                                    Row(
+                                      children: const [
+                                        Icon(
+                                          Icons
+                                              .assignment_turned_in_rounded,
+                                          size: 12,
+                                          color: Color(0xFF1A5C35),
+                                        ),
+                                        SizedBox(width: 4),
+                                        Text(
+                                          'Has submission form',
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            color: Color(0xFF1A5C35),
+                                            fontWeight:
+                                                FontWeight.w500,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ],
                               ),
                             ),
-                            IconButton(
-                              onPressed: () => _deleteTask(task.id),
-                              icon: const Icon(
-                                Icons.delete_outline,
-                                color: Colors.redAccent,
-                              ),
+                            // Right: points badge + delete
+                            Column(
+                              crossAxisAlignment:
+                                  CrossAxisAlignment.end,
+                              children: [
+                                Container(
+                                  padding:
+                                      const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: _goldAccent,
+                                    borderRadius:
+                                        BorderRadius.circular(12),
+                                  ),
+                                  child: Text(
+                                    '+${task.points} pts',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ),
+                                IconButton(
+                                  onPressed: () =>
+                                      _deleteTask(task.id),
+                                  icon: const Icon(
+                                    Icons.delete_outline,
+                                    color: Colors.redAccent,
+                                  ),
+                                ),
+                              ],
                             ),
                           ],
                         ),
@@ -195,6 +254,8 @@ class _AdminManageTasksScreenState extends State<AdminManageTasksScreen> {
                 );
               },
             ),
+
+            // ── TAB 2: ADD TASK ──
             SingleChildScrollView(
               padding: const EdgeInsets.all(16),
               child: Form(
@@ -204,10 +265,10 @@ class _AdminManageTasksScreenState extends State<AdminManageTasksScreen> {
                     TextFormField(
                       controller: _titleCtrl,
                       decoration: const InputDecoration(
-                        labelText: 'Task Title',
-                      ),
-                      validator: (v) =>
-                          v == null || v.trim().isEmpty ? 'Required' : null,
+                          labelText: 'Task Title'),
+                      validator: (v) => v == null || v.trim().isEmpty
+                          ? 'Required'
+                          : null,
                     ),
                     const SizedBox(height: 12),
                     TextFormField(
@@ -215,16 +276,17 @@ class _AdminManageTasksScreenState extends State<AdminManageTasksScreen> {
                       minLines: 3,
                       maxLines: 5,
                       decoration: const InputDecoration(
-                        labelText: 'Description',
-                      ),
-                      validator: (v) =>
-                          v == null || v.trim().isEmpty ? 'Required' : null,
+                          labelText: 'Description'),
+                      validator: (v) => v == null || v.trim().isEmpty
+                          ? 'Required'
+                          : null,
                     ),
                     const SizedBox(height: 12),
                     TextFormField(
                       controller: _pointsCtrl,
                       keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(labelText: 'Points'),
+                      decoration: const InputDecoration(
+                          labelText: 'Points'),
                       validator: (v) {
                         final n = int.tryParse(v ?? '');
                         return (n == null || n <= 0)
@@ -233,14 +295,30 @@ class _AdminManageTasksScreenState extends State<AdminManageTasksScreen> {
                       },
                     ),
                     const SizedBox(height: 12),
+                    TextFormField(
+                      controller: _linkCtrl,
+                      decoration: const InputDecoration(
+                        labelText: 'Assignment Submission Link',
+                        hintText: 'https://forms.gle/...',
+                        helperText:
+                            'Optional: Google Form link for students',
+                        prefixIcon: Icon(
+                          Icons.link_rounded,
+                          color: Color(0xFF1A5C35),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
                     Row(
                       children: [
                         Expanded(
                           child: Text(
                             _dueDate == null
                                 ? 'No due date selected'
-                                : DateFormat('dd MMM yyyy').format(_dueDate!),
-                            style: const TextStyle(color: AppColors.textGray),
+                                : DateFormat('dd MMM yyyy')
+                                    .format(_dueDate!),
+                            style: const TextStyle(
+                                color: AppColors.textGray),
                           ),
                         ),
                         TextButton(

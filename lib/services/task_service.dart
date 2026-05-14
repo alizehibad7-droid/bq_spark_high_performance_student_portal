@@ -22,6 +22,7 @@ class TaskService {
     required DateTime dueDate,
     required int points,
     required String createdBy,
+    String submissionLink = '',
   }) async {
     debugPrint('Adding task: $title');
     await _db.collection('tasks').add({
@@ -31,6 +32,7 @@ class TaskService {
       'points': points,
       'createdBy': createdBy,
       'createdAt': FieldValue.serverTimestamp(),
+      'submissionLink': submissionLink,
     });
   }
 

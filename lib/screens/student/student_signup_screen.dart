@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../firebase/firebase_error_mapper.dart';
 import '../../services/auth_service.dart';
+import '../main_nav.dart';
 
 class StudentSignupScreen extends StatefulWidget {
   const StudentSignupScreen({super.key});
@@ -45,7 +46,12 @@ class _StudentSignupScreenState extends State<StudentSignupScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Account created successfully')),
       );
-      Navigator.pushReplacementNamed(context, '/student-dashboard');
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute<void>(
+          builder: (_) => const MainNav(),
+        ),
+        (route) => false,
+      );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(

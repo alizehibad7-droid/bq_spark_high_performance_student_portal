@@ -73,83 +73,92 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
   @override
   Widget build(BuildContext context) {
     final canPop = Navigator.of(context).canPop();
-    return Scaffold(
-      backgroundColor: _pageBg,
-      appBar: AppBar(
-        backgroundColor: _primaryGreen,
-        foregroundColor: Colors.white,
-        elevation: 0,
-        title: Text(_titles[_selectedIndex]),
-        automaticallyImplyLeading: canPop,
-        leading: null,
-        actions: [
-          Container(
-            margin: const EdgeInsets.only(right: 8),
-            width: 32,
-            height: 32,
-            decoration: const BoxDecoration(
-              shape: BoxShape.circle,
-              color: Colors.white24,
-            ),
-            alignment: Alignment.center,
-            child: const Text(
-              'AD',
-              style: TextStyle(
-                fontWeight: FontWeight.w700,
-                color: Colors.white,
+
+    return PopScope(
+      canPop: canPop,
+      child: Scaffold(
+        backgroundColor: _pageBg,
+        appBar: AppBar(
+          backgroundColor: _primaryGreen,
+          foregroundColor: Colors.white,
+          elevation: 0,
+          automaticallyImplyLeading: false,
+          leading: canPop
+              ? IconButton(
+                  icon: const Icon(Icons.arrow_back_ios_rounded),
+                  onPressed: () => Navigator.of(context).pop(),
+                )
+              : null,
+          title: Text(_titles[_selectedIndex]),
+          actions: [
+            Container(
+              margin: const EdgeInsets.only(right: 8),
+              width: 32,
+              height: 32,
+              decoration: const BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white24,
+              ),
+              alignment: Alignment.center,
+              child: const Text(
+                'AD',
+                style: TextStyle(
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white,
+                ),
               ),
             ),
-          ),
-        ],
-      ),
-      body: IndexedStack(
-        index: _selectedIndex,
-        children: [
-          _AdminDashboardTab(
-            onNavigateTab: (index) => setState(() => _selectedIndex = index),
-            onOpenNotifySheet: _openNotifyBottomSheet,
-          ),
-          const _AdminTasksTab(),
-          const _AdminStudentsTab(),
-          const _AdminResourcesTab(),
-          _AdminSettingsTab(onLogout: _logout),
-        ],
-      ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedIndex,
-        onTap: (index) => setState(() => _selectedIndex = index),
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: _primaryGreen,
-        unselectedItemColor: _textMuted,
-        backgroundColor: _cardBg,
-        selectedLabelStyle: const TextStyle(
-          fontWeight: FontWeight.w700,
-          fontSize: 11,
+          ],
         ),
-        unselectedLabelStyle: const TextStyle(fontSize: 11),
-        elevation: 12,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.dashboard_rounded),
-            label: 'Dashboard',
+        body: IndexedStack(
+          index: _selectedIndex,
+          children: [
+            _AdminDashboardTab(
+              onNavigateTab: (index) => setState(() => _selectedIndex = index),
+              onOpenNotifySheet: _openNotifyBottomSheet,
+            ),
+            const _AdminTasksTab(),
+            const _AdminStudentsTab(),
+            const _AdminResourcesTab(),
+            _AdminSettingsTab(onLogout: _logout),
+          ],
+        ),
+        bottomNavigationBar: BottomNavigationBar(
+          currentIndex: _selectedIndex,
+          onTap: (index) => setState(() => _selectedIndex = index),
+          type: BottomNavigationBarType.fixed,
+          selectedItemColor: _primaryGreen,
+          unselectedItemColor: _textMuted,
+          backgroundColor: _cardBg,
+          selectedLabelStyle: const TextStyle(
+            fontWeight: FontWeight.w700,
+            fontSize: 11,
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.task_alt_rounded),
-            label: 'Tasks',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.groups_rounded),
-            label: 'Students',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.menu_book_rounded),
-            label: 'Resources',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.settings_rounded),
-            label: 'Settings',
-          ),
-        ],
+          unselectedLabelStyle: const TextStyle(fontSize: 11),
+          elevation: 12,
+          items: const [
+            BottomNavigationBarItem(
+              icon: Icon(Icons.dashboard_rounded),
+              label: 'Dashboard',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.task_alt_rounded),
+              label: 'Tasks',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.groups_rounded),
+              label: 'Students',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.menu_book_rounded),
+              label: 'Resources',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.settings_rounded),
+              label: 'Settings',
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -623,6 +632,7 @@ class _AdminTasksTabState extends State<_AdminTasksTab> {
   final _titleCtrl = TextEditingController();
   final _descCtrl = TextEditingController();
   final _pointsCtrl = TextEditingController();
+  final _linkCtrl = TextEditingController(); // NEW
   DateTime? _dueDate;
   bool _submitting = false;
 
@@ -631,6 +641,7 @@ class _AdminTasksTabState extends State<_AdminTasksTab> {
     _titleCtrl.dispose();
     _descCtrl.dispose();
     _pointsCtrl.dispose();
+    _linkCtrl.dispose(); // NEW
     super.dispose();
   }
 
@@ -662,20 +673,24 @@ class _AdminTasksTabState extends State<_AdminTasksTab> {
         dueDate: _dueDate!,
         points: int.parse(_pointsCtrl.text.trim()),
         createdBy: uid,
+        submissionLink: _linkCtrl.text.trim(), // NEW
       );
       if (!mounted) return;
       _titleCtrl.clear();
       _descCtrl.clear();
       _pointsCtrl.clear();
-      setState(() => _dueDate = null);
+      _linkCtrl.clear(); // NEW
+      setState(() {
+        _dueDate = null;
+        _showAddForm = false; // Go back to list
+      });
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('Task added successfully')));
     } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Failed to add task: $e')));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed: $e')));
+      }
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
@@ -815,6 +830,19 @@ class _AdminTasksTabState extends State<_AdminTasksTab> {
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                             ),
+                            if (task.submissionLink.isNotEmpty) ...[
+                              const SizedBox(height: 6),
+                              Row(
+                                children: const [
+                                  Icon(Icons.link_rounded, size: 12, color: _primaryGreen),
+                                  SizedBox(width: 4),
+                                  Text(
+                                    'Has Google Form',
+                                    style: TextStyle(fontSize: 10, color: _primaryGreen, fontWeight: FontWeight.w600),
+                                  ),
+                                ],
+                              ),
+                            ],
                           ],
                         ),
                       ),
@@ -872,7 +900,7 @@ class _AdminTasksTabState extends State<_AdminTasksTab> {
                       ),
                       const SizedBox(width: 4),
                       const Text(
-                        '0 completions',
+                        'Student Submissions',
                         style: TextStyle(fontSize: 11, color: _textMuted),
                       ),
                       const Spacer(),
@@ -935,6 +963,15 @@ class _AdminTasksTabState extends State<_AdminTasksTab> {
                       ? 'Enter valid points'
                       : null;
                 },
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _linkCtrl,
+                decoration: _adminInputDecoration(
+                  'Submission Link (Optional)',
+                ).copyWith(
+                  hintText: 'https://forms.gle/...',
+                ),
               ),
               const SizedBox(height: 12),
               InkWell(

@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../firebase/firebase_error_mapper.dart';
 import '../../services/auth_service.dart';
+import '../admin_panel_screen.dart';
 
 class AdminLoginScreen extends StatefulWidget {
   const AdminLoginScreen({super.key});
@@ -37,7 +38,12 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Admin login successful')),
       );
-      Navigator.pushReplacementNamed(context, '/admin-dashboard');
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute<void>(
+          builder: (_) => const AdminPanelScreen(),
+        ),
+        (route) => false,
+      );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
