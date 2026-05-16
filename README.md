@@ -23,12 +23,12 @@ A modern, full-featured Flutter application designed to manage and track the per
 ## 🛠️ Tech Stack
 - **Framework**: [Flutter](https://flutter.dev/) (Targeting Android, iOS, and Web)
 - **Backend**: [Firebase](https://firebase.google.com/)
-  - **Authentication**: Email/ID based login system.
-  - **Firestore**: Scalable NoSQL database for real-time data sync.
-  - **Cloud Messaging**: Push notifications.
-  - **Cloud Storage**: Hosting for student resources and PDF notes.
-  - **Remote Config**: Dynamic app configuration (Maintenance mode, etc.).
-  - **Crashlytics**: Real-time crash reporting.
+    - **Authentication**: Email/ID based login system.
+    - **Firestore**: Scalable NoSQL database for real-time data sync.
+    - **Cloud Messaging**: Push notifications.
+    - **Cloud Storage**: Hosting for student resources and PDF notes.
+    - **Remote Config**: Dynamic app configuration (Maintenance mode, etc.).
+    - **Crashlytics**: Real-time crash reporting.
 - **State Management**: [Provider](https://pub.dev/packages/provider)
 - **Architecture**: Clean, modular folder structure.
 
@@ -53,10 +53,10 @@ A modern, full-featured Flutter application designed to manage and track the per
    ```
 
 3. **Firebase Configuration**:
-   - Create a project on the [Firebase Console](https://console.firebase.google.com/).
-   - Add an Android/iOS app to your Firebase project.
-   - Download `google-services.json` (for Android) and `GoogleService-Info.plist` (for iOS).
-   - Place `google-services.json` in `android/app/` and `GoogleService-Info.plist` in `ios/Runner/`.
+    - Create a project on the [Firebase Console](https://console.firebase.google.com/).
+    - Add an Android/iOS app to your Firebase project.
+    - Download `google-services.json` (for Android) and `GoogleService-Info.plist` (for iOS).
+    - Place `google-services.json` in `android/app/` and `GoogleService-Info.plist` in `ios/Runner/`.
 
 4. **Run the app**:
    ```bash
@@ -89,6 +89,14 @@ This application uses Firestore Security Rules to ensure:
 ## 📝 License
 
 This project is proprietary. All rights reserved.
+
+## 📸 Screenshots
+
+### Admin Panel
+![Admin Panel](assets/images/admin_panel_screens.png)
+
+### Student Panel
+![Student Panel](assets/images/student_panel_screens.png)
 
 ---
 Developed for **Bano Qabil — Rawalpindi**
