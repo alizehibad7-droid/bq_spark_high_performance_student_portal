@@ -93,10 +93,10 @@ This project is proprietary. All rights reserved.
 ## 📸 Screenshots
 
 ### Admin Panel
-![Admin Panel](assets/images/admin_panel_screens.png)
+![Admin Panel](assets/images/student_panel_screens.png)
 
 ### Student Panel
-![Student Panel](assets/images/student_panel_screens.png)
+![Student Panel](assets/images/admin_panel_screens.png)
 
 ---
 Developed for **Bano Qabil — Rawalpindi**
