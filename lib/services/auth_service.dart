@@ -33,15 +33,15 @@ class AuthService {
   // ─── Student Login ───────────────────────────────────────
   Future<UserCredential> loginStudent(String studentId, String password) async {
     final normalizedId = _normalizeStudentId(studentId);
-    final resolvedEmail = await _findStudentEmailById(normalizedId);
+    final resolvedEmails = await _findStudentEmailsById(normalizedId);
     final fallbackEmail = _toFallbackEmail(studentId);
-    final candidateEmails = <String>[
-      if (resolvedEmail != null && resolvedEmail.isNotEmpty) resolvedEmail,
+    final candidateEmails = <String>{
+      ...resolvedEmails,
       fallbackEmail,
-    ];
+    }.toList();
     FirebaseAuthException? lastAuthException;
 
-    for (final email in candidateEmails.toSet()) {
+    for (final email in candidateEmails) {
       try {
         final userCredential = await _auth.signInWithEmailAndPassword(
           email: email,
@@ -51,14 +51,18 @@ class AuthService {
         return userCredential;
       } on FirebaseAuthException catch (e) {
         lastAuthException = e;
-        if (e.code != 'user-not-found') {
-          rethrow;
+        if (e.code == 'user-not-found' || e.code == 'invalid-credential') {
+          continue;
         }
+        rethrow;
       }
     }
 
     if (lastAuthException != null) {
-      throw lastAuthException;
+      throw FirebaseAuthException(
+        code: lastAuthException.code,
+        message: 'Wrong Student ID or password.',
+      );
     }
     throw FirebaseAuthException(
       code: 'user-not-found',
@@ -66,20 +70,35 @@ class AuthService {
     );
   }
 
-  Future<String?> _findStudentEmailById(String normalizedStudentId) async {
-    final userQuery = await _db
-        .collection('users')
-        .where('studentIdNormalized', isEqualTo: normalizedStudentId)
-        .where('role', isEqualTo: 'student')
-        .limit(1)
-        .get();
+  Future<List<String>> _findStudentEmailsById(String normalizedStudentId) async {
+    try {
+      final userQuery = await _db
+          .collection('users')
+          .where('studentIdNormalized', isEqualTo: normalizedStudentId)
+          .where('role', isEqualTo: 'student')
+          .limit(1)
+          .get();
 
-    if (userQuery.docs.isEmpty) return null;
-    final email = userQuery.docs.first.data()['email'];
-    if (email is String && email.trim().isNotEmpty) {
-      return email.trim().toLowerCase();
+      if (userQuery.docs.isEmpty) return const [];
+
+      final data = userQuery.docs.first.data();
+      final emails = <String>[];
+      for (final field in ['email', 'loginEmailAlias']) {
+        final value = data[field];
+        if (value is String && value.trim().isNotEmpty) {
+          emails.add(value.trim().toLowerCase());
+        }
+      }
+      return emails;
+    } on FirebaseException catch (e) {
+      if (e.code == 'permission-denied') {
+        debugPrint(
+          'Student email lookup skipped (Firestore rules): ${e.message}',
+        );
+        return const [];
+      }
+      rethrow;
     }
-    return null;
   }
 
   // ─── Student Signup ──────────────────────────────────────
